@@ -165,16 +165,236 @@ def export_to_csv() -> str:
     except Exception as e:
         return f"Error exporting to CSV: {e}"
 
-def import_from_csv() -> str:
+def import_from_csv(file_path: str = None) -> str:
+    """
+    Import student data from a specified CSV file.
+    
+    Args:
+        file_path: Path to the CSV file to import from
+        
+    Returns:
+        Status message
+    """
     try:
+        if file_path is None:
+            file_path = CSV_FILE
+        
+        if not os.path.exists(file_path):
+            return f"Error: File '{file_path}' not found."
+        
+        # Check if file is readable
+        if not os.access(file_path, os.R_OK):
+            return f"Error: Cannot read file '{file_path}'. Check permissions."
+        
         old_count = len(students)
-        if load_students_from_csv():
-            new_count = len(students)
-            return f"Successfully imported {new_count} students from {CSV_FILE} (was {old_count})"
+        imported_students = {}
+        
+        with open(file_path, 'r', newline='', encoding='utf-8') as file:
+            reader = csv.reader(file)
+            
+            # Try to detect if first row is header
+            first_row = next(reader, None)
+            if first_row is None:
+                return f"Error: File '{file_path}' is empty."
+            
+            # Check if first row looks like a header
+            is_header = False
+            if len(first_row) >= 2:
+                try:
+                    # If second column can't be converted to int, it's likely a header
+                    int(first_row[1])
+                except ValueError:
+                    is_header = True
+            
+            # If not header, process first row as data
+            if not is_header and len(first_row) >= 2:
+                try:
+                    name = first_row[0].strip()
+                    age = int(first_row[1].strip())
+                    if name and 0 <= age <= 150:
+                        imported_students[name] = age
+                except ValueError:
+                    pass
+            
+            # Process remaining rows
+            row_number = 2 if is_header else 1
+            for row in reader:
+                row_number += 1
+                if len(row) >= 2:
+                    try:
+                        name = row[0].strip()
+                        age = int(row[1].strip())
+                        if name and 0 <= age <= 150:
+                            imported_students[name] = age
+                        elif name:
+                            print(f"Warning: Skipped invalid age for {name} on row {row_number}")
+                    except ValueError:
+                        print(f"Warning: Skipped invalid data on row {row_number}: {row}")
+                        continue
+        
+        if not imported_students:
+            return f"Error: No valid student data found in '{file_path}'. Expected format: Name, Age"
+        
+        # Replace current students with imported data
+        students.clear()
+        students.update(imported_students)
+        
+        # Save to JSON file
+        if save_students_to_json():
+            return f"Successfully imported {len(students)} students from '{file_path}' (was {old_count}). Data saved to {JSON_FILE}."
         else:
-            return "Failed to import from CSV file."
+            return f"Imported {len(students)} students from '{file_path}' but failed to save to {JSON_FILE}."
+            
+    except FileNotFoundError:
+        return f"Error: File '{file_path}' not found."
+    except PermissionError:
+        return f"Error: Permission denied accessing '{file_path}'."
+    except UnicodeDecodeError:
+        return f"Error: Cannot read '{file_path}'. File may not be a valid text file."
     except Exception as e:
         return f"Error importing from CSV: {e}"
+
+
+def import_and_merge_csv(file_path: str) -> str:
+    """
+    Import student data from CSV and merge with existing data.
+    
+    Args:
+        file_path: Path to the CSV file to import from
+        
+    Returns:
+        Status message
+    """
+    try:
+        if not os.path.exists(file_path):
+            return f"Error: File '{file_path}' not found."
+        
+        old_count = len(students)
+        imported_count = 0
+        updated_count = 0
+        
+        with open(file_path, 'r', newline='', encoding='utf-8') as file:
+            reader = csv.reader(file)
+            
+            # Skip header if present
+            first_row = next(reader, None)
+            if first_row and len(first_row) >= 2:
+                try:
+                    int(first_row[1])
+                    # First row is data, process it
+                    name = first_row[0].strip()
+                    age = int(first_row[1].strip())
+                    if name and 0 <= age <= 150:
+                        if name in students:
+                            students[name] = age
+                            updated_count += 1
+                        else:
+                            students[name] = age
+                            imported_count += 1
+                except ValueError:
+                    # First row is header, skip it
+                    pass
+            
+            # Process remaining rows
+            for row in reader:
+                if len(row) >= 2:
+                    try:
+                        name = row[0].strip()
+                        age = int(row[1].strip())
+                        if name and 0 <= age <= 150:
+                            if name in students:
+                                students[name] = age
+                                updated_count += 1
+                            else:
+                                students[name] = age
+                                imported_count += 1
+                    except ValueError:
+                        continue
+        
+        if imported_count == 0 and updated_count == 0:
+            return f"No valid student data found in '{file_path}'."
+        
+        # Save to JSON file
+        if save_students_to_json():
+            result = f"Successfully processed '{file_path}': "
+            if imported_count > 0:
+                result += f"{imported_count} new students added"
+            if updated_count > 0:
+                if imported_count > 0:
+                    result += f", {updated_count} students updated"
+                else:
+                    result += f"{updated_count} students updated"
+            result += f". Total students: {len(students)}. Data saved to {JSON_FILE}."
+            return result
+        else:
+            return f"Processed data but failed to save to {JSON_FILE}."
+            
+    except Exception as e:
+        return f"Error importing and merging CSV: {e}"
+
+
+def validate_csv_format(file_path: str) -> str:
+    """
+    Validate CSV file format before importing.
+    
+    Args:
+        file_path: Path to the CSV file to validate
+        
+    Returns:
+        Validation result message
+    """
+    try:
+        if not os.path.exists(file_path):
+            return f"File '{file_path}' not found."
+        
+        valid_rows = 0
+        total_rows = 0
+        issues = []
+        
+        with open(file_path, 'r', newline='', encoding='utf-8') as file:
+            reader = csv.reader(file)
+            
+            for row_num, row in enumerate(reader, 1):
+                total_rows += 1
+                if len(row) < 2:
+                    issues.append(f"Row {row_num}: Not enough columns")
+                    continue
+                
+                name = row[0].strip()
+                try:
+                    age = int(row[1].strip())
+                    if not name:
+                        issues.append(f"Row {row_num}: Empty name")
+                    elif not (0 <= age <= 150):
+                        issues.append(f"Row {row_num}: Invalid age {age}")
+                    else:
+                        valid_rows += 1
+                except ValueError:
+                    if row_num == 1 and row[1].lower() in ['age', 'years', 'old']:
+                        # Likely header row
+                        continue
+                    issues.append(f"Row {row_num}: Invalid age '{row[1]}'")
+        
+        result = f"CSV Validation Results for '{file_path}':\n"
+        result += f"Total rows: {total_rows}\n"
+        result += f"Valid student records: {valid_rows}\n"
+        
+        if issues:
+            result += f"Issues found ({len(issues)}):\n"
+            for issue in issues[:5]:  # Show first 5 issues
+                result += f"  - {issue}\n"
+            if len(issues) > 5:
+                result += f"  ... and {len(issues) - 5} more issues\n"
+        
+        if valid_rows > 0:
+            result += f"\nFile is ready for import ({valid_rows} valid records)."
+        else:
+            result += f"\nFile cannot be imported (no valid records found)."
+        
+        return result
+        
+    except Exception as e:
+        return f"Error validating CSV: {e}"
 
 def get_student_stats() -> str:
     try:
@@ -185,7 +405,7 @@ def get_student_stats() -> str:
         total_students = len(students)
         avg_age = sum(ages) / total_students
         min_age = min(ages)
-        max_age = max(ages)  # Corrected this line
+        max_age = max(ages)
         
         result = f"Student Database Statistics:\n"
         result += f"  Total Students: {total_students}\n"
