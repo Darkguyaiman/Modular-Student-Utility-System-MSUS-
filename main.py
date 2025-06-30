@@ -3,6 +3,7 @@ import text_utils
 import student_utils
 import sys
 import os
+import csv
 
 def display_menu():
     print("\n" + "="*50)
@@ -21,6 +22,7 @@ def display_menu():
     print("11. Import Students from CSV")
     print("12. Math Operations (Average, Min/Max)")
     print("13. Text Operations (Word Count, Capitalize)")
+    print("14. Create Sample CSV File")
     print("0.  Exit")
     print("-"*50)
 
@@ -229,19 +231,144 @@ def handle_export_csv():
         print(f"Error: {e}")
 
 def handle_import_csv():
+    """Handle importing students from a custom CSV file with error handling."""
     print("\n--- Import Students from CSV ---")
     try:
-        print("Warning: This will replace current student data with CSV data.")
-        confirm = get_safe_input("Continue? (yes/no): ", "string")
-        if confirm is None or confirm.lower() not in ['yes', 'y']:
-            print("Import cancelled.")
+        print("Choose import option:")
+        print("1. Use default CSV file (students.csv)")
+        print("2. Specify custom CSV file path")
+        print("3. Validate CSV file format first")
+        
+        choice = get_safe_input("Enter choice (1-3): ", "string")
+        if choice is None:
             return
         
-        result = student_utils.import_from_csv()
+        if choice == "1":
+            # Use default CSV file
+            file_path = "students.csv"
+            if not os.path.exists(file_path):
+                print(f"Default file '{file_path}' not found.")
+                return
+        
+        elif choice == "2":
+            # Get custom file path
+            print("\nEnter the full path to your CSV file:")
+            print("Examples:")
+            print("  Windows: C:\\Users\\YourName\\Documents\\students.csv")
+            print("  Mac/Linux: /home/username/documents/students.csv")
+            print("  Relative: ./data/students.csv")
+            
+            file_path = get_safe_input("File path: ", "string")
+            if file_path is None:
+                return
+            
+            # Remove quotes if user added them
+            file_path = file_path.strip('"\'')
+            
+        elif choice == "3":
+            # Validate file first
+            print("\nEnter the path to the CSV file you want to validate:")
+            file_path = get_safe_input("File path: ", "string")
+            if file_path is None:
+                return
+            
+            file_path = file_path.strip('"\'')
+            validation_result = student_utils.validate_csv_format(file_path)
+            print(f"\n{validation_result}")
+            
+            if "ready for import" in validation_result.lower():
+                proceed = get_safe_input("\nProceed with import? (yes/no): ", "string")
+                if proceed is None or proceed.lower() not in ['yes', 'y']:
+                    print("Import cancelled.")
+                    return
+            else:
+                print("Please fix the issues in your CSV file before importing.")
+                return
+        
+        else:
+            print("Invalid choice.")
+            return
+        
+        # Check if file exists
+        if not os.path.exists(file_path):
+            print(f"Error: File '{file_path}' not found.")
+            print("Please check the path and try again.")
+            return
+        
+        # Show current data warning
+        if len(student_utils.students) > 0:
+            print(f"\nWarning: This will replace current student data ({len(student_utils.students)} students).")
+            print("Choose import mode:")
+            print("1. Replace all data (current data will be lost)")
+            print("2. Merge with existing data (update existing, add new)")
+            
+            mode_choice = get_safe_input("Enter choice (1-2): ", "string")
+            if mode_choice is None:
+                return
+            
+            if mode_choice == "1":
+                confirm = get_safe_input("Are you sure you want to replace all data? (yes/no): ", "string")
+                if confirm is None or confirm.lower() not in ['yes', 'y']:
+                    print("Import cancelled.")
+                    return
+                result = student_utils.import_from_csv(file_path)
+            elif mode_choice == "2":
+                result = student_utils.import_and_merge_csv(file_path)
+            else:
+                print("Invalid choice. Import cancelled.")
+                return
+        else:
+            # No existing data, just import
+            result = student_utils.import_from_csv(file_path)
+        
         print(f"\n{result}")
+        
+        # Show sample of imported data
+        if "Successfully" in result:
+            print("\nSample of imported data:")
+            sample_students = list(student_utils.students.items())[:5]
+            for name, age in sample_students:
+                print(f"  - {name}: {age} years old")
+            if len(student_utils.students) > 5:
+                print(f"  ... and {len(student_utils.students) - 5} more students")
         
     except Exception as e:
         print(f"Error: {e}")
+
+
+def handle_create_sample_csv():
+    """Create a sample CSV file for users to understand the format."""
+    print("\n--- Create Sample CSV File ---")
+    try:
+        file_path = get_safe_input("Enter path for sample CSV file (e.g., sample_students.csv): ", "string")
+        if file_path is None:
+            return
+        
+        file_path = file_path.strip('"\'')
+        
+        # Create sample data
+        sample_data = [
+            ["Name", "Age"],
+            ["John Smith", "20"],
+            ["Emma Johnson", "19"],
+            ["Michael Brown", "21"],
+            ["Sarah Davis", "22"],
+            ["David Wilson", "20"]
+        ]
+        
+        with open(file_path, 'w', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            writer.writerows(sample_data)
+        
+        print(f"\nSample CSV file created: {file_path}")
+        print("The file contains:")
+        print("- Header row: Name, Age")
+        print("- 5 sample student records")
+        print("- Proper CSV formatting")
+        print("\nYou can edit this file and import it using option 11.")
+        
+    except Exception as e:
+        print(f"Error creating sample CSV: {e}")
 
 def handle_math_operations():
     print("\n--- Math Operations ---")
@@ -295,7 +422,7 @@ def main():
         while True:
             try:
                 display_menu()
-                choice = input("Enter your choice (0-13): ").strip()
+                choice = input("Enter your choice (0-14): ").strip()
                 
                 if choice == '0':
                     print("\nSaving data and exiting...")
@@ -332,8 +459,10 @@ def main():
                     handle_math_operations()
                 elif choice == '13':
                     handle_text_operations()
+                elif choice == '14':
+                    handle_create_sample_csv()
                 else:
-                    print("\nInvalid choice. Please select a number from 0-13.")
+                    print("\nInvalid choice. Please select a number from 0-14.")
                     
             except KeyboardInterrupt:
                 print("\n\nProgram interrupted by user.")
