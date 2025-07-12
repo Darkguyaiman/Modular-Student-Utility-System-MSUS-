@@ -88,6 +88,26 @@ MSUS/
 <div align="center">
 </div>
 
+<div align="center">
+
+### Contributor Information
+
+<table>
+<tr>
+<td align="center">
+<img src="https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif" width="40px"/>
+<br><strong>Lead Developer</strong>
+<br><a href="https://github.com/Darkguyaiman">@Darkguyaiman</a>
+</td>
+<td align="center">
+<img src="https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif" width="40px"/>
+<br><strong>Co-Developer</strong>
+<br>Kefly Keflon
+</td>
+</tr>
+</table>
+
+</div>
 
 ### Module Relationships
 
