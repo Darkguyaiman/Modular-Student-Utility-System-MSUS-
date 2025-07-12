@@ -1,8 +1,3 @@
-"""
-Text utilities module for string processing and grading operations.
-Contains functions for text manipulation and grade calculation.
-"""
-
 def reverse_sentence(sentence: str) -> str:
     try:
         if not isinstance(sentence, str):
@@ -26,19 +21,19 @@ def get_grade(mark: int) -> str:
         if not (0 <= mark <= 100):
             raise ValueError(f"Mark must be between 0 and 100, got {mark}")
         
-        if mark >= 90:
+        if mark >= 80:
             return 'A'
-        elif mark >= 80:
+        elif mark >= 65:
             return 'B'
-        elif mark >= 70:
+        elif mark >= 50:
             return 'C'
-        elif mark >= 60:
+        elif mark >= 40:
             return 'D'
         else:
             return 'F'
             
     except Exception as e:
-        raise Exception(f"Error in get_grade: {e}")
+        raise Exception(f"Error in get_grade: {e}") from e
 
 def count_words(text: str) -> int:
     try:
