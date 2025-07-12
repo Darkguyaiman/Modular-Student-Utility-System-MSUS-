@@ -34,6 +34,7 @@ The **Modular Student Utility System (MSUS)** is a collaborative Python applicat
 
 ## Features
 
+<div align="center">
 <table>
 <tr>
 <td width="50%">
@@ -68,8 +69,8 @@ The **Modular Student Utility System (MSUS)** is a collaborative Python applicat
 </td>
 </tr>
 </table>
+</div>
 
----
 
 ## Project Structure
 
