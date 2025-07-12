@@ -128,7 +128,8 @@ def handle_get_grade():
         print(f"\nMark: {mark} → Grade: {grade}")
         
         print("\nGrade Scale:")
-        print("A: 90-100, B: 80-89, C: 70-79, D: 60-69, F: 0-59")
+        print("A: 80-100, B: 65-79, C: 50-64, D: 40-49, F: 0-39")
+
         
     except Exception as e:
         print(f"Error: {e}")
