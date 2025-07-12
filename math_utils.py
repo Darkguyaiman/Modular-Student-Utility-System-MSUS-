@@ -1,8 +1,3 @@
-"""
-Math utilities module for numeric processing operations.
-Contains functions for counting even/odd numbers and calculating sum of digits.
-"""
-
 def count_even_odd(numbers: list[int]) -> tuple[int, int]:
     try:
         if not isinstance(numbers, list):
