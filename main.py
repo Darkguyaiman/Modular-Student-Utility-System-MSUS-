@@ -412,7 +412,7 @@ def handle_text_operations():
 
 def main():
     try:
-        print("Welcome to the Enhanced Modular Student Utility System!")
+        print("Welcome to the Modular Student Utility System!")
         print("Features: File I/O, Data Persistence, Error Handling")
         
         if os.path.exists("students.json"):
