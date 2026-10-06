@@ -126,3 +126,8 @@ graph TD
     style E fill:#9b59b6,stroke:#8e44ad,color:#fff
     style F fill:#9b59b6,stroke:#8e44ad,color:#fff
 ```
+
+
+## Author and portfolio
+
+Created by **Mohamed Aiman (Darkguyaiman)**. Explore more projects and get in touch at **[darkguyaiman.com](https://darkguyaiman.com/)**.
